@@ -120,7 +120,6 @@ class Member(commands.Cog, name='Member'):
         if nick is None:
             nick = ctx.author.name
         values = await self.check_ap(syrupmember)
-        print(values)
         percent = float(values[1] - values[0]) / float(values[2] - values[0])
         bars = int(percent * 15)
         display_bars = '['
@@ -136,18 +135,18 @@ class Member(commands.Cog, name='Member'):
     @commands.command(name='checkap', hidden=True)
     async def check_all_ap(self, ctx):
         if f.check_admin(ctx.author.roles):
-            print('Checking member ap')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Checking all member ap')
             for member in members:
                 await self.increase_ap(self.get_member_by_id(member), 0)
-            print('Done!')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Done!')
 
     @commands.command(name='recalc', hidden=True)
     async def recalculate_rank(self, ctx):
         if f.check_admin(ctx.author.roles):
-            print('Recalculating user AP')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Recalculating user AP')
             users = {}
             for t_channel in ctx.guild.text_channels:
-                print('Getting history for Text Channel: ' + t_channel.name)
+                await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Getting history for Text Channel: ' + t_channel.name)
                 last_message = None
                 async for message in t_channel.history(limit=None, oldest_first=True):
                     member = message.author
@@ -157,10 +156,10 @@ class Member(commands.Cog, name='Member'):
                                 users[str(member.id)] = 0
                             users[str(member.id)] += await f.value_message(message, last_message=last_message)
                             last_message = message
-            print('Assigning AP to Users')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Assigning AP to Users')
             for user in users:
                 await self.set_ap(self.get_member_by_id(int(user)), users[user])
-            print('Done!')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Done!')
 
     ###
     # Syrup Member Management
