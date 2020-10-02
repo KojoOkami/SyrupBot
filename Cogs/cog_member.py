@@ -121,7 +121,6 @@ class Member(commands.Cog, name='Member'):
             nick = ctx.author.name
         values = await self.check_ap(syrupmember)
         percent = float(values[1] - values[0]) / float(values[2] - values[0])
-        print(percent)
         bars = int(percent * 15)
         display_bars = '['
         for i in range(bars):
@@ -234,7 +233,7 @@ class Member(commands.Cog, name='Member'):
                     if last_idx == 0:
                         rank = last_rank
                         last_idx = last_rank.value['divisions']
-                    if member.rank is not rank or member.division != last_idx - 1:
+                    if member.rank is not rank or member.division != rank.value['divisions'] + 1 - last_idx:
                         member.rank = rank
                         member.division = rank.value['divisions'] + 1 - last_idx
                         self.save_member(member)
