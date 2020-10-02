@@ -65,3 +65,7 @@ def check_admin(roles):
         if role.id == 740391690296361101:
             return True
     return False
+
+
+def get_mention(member):
+    return '@' + member.name + '#' + member.discriminator

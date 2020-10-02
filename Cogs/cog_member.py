@@ -115,10 +115,26 @@ class Member(commands.Cog, name='Member'):
 
     @commands.command()
     async def rank(self, ctx):
-        await ctx.message.channel.send(self.get_member_by_id(ctx.message.author.id))
+        syrupmember = self.get_member_by_id(ctx.author.id)
+        nick = syrupmember.nick
+        if nick is None:
+            nick = ctx.author.name
+        values = await self.check_ap(syrupmember)
+        percent = float(values[1] - values[0]) / float(values[2] - values[0])
+        print(percent)
+        bars = int(percent * 15)
+        display_bars = '['
+        for i in range(bars):
+            display_bars += '■'
+        for i in range(15 - bars):
+            display_bars += '-'
+        display_bars += ']'
+        await ctx.message.channel.send('**' + nick + '**\n---------------\n' + syrupmember.rank.value['name'] +
+                                       get_division_by_number(syrupmember.division-1).value + '\n' +
+                                       display_bars)
 
     @commands.command(name='checkap', hidden=True)
-    async def check_ap(self, ctx):
+    async def check_all_ap(self, ctx):
         if f.check_admin(ctx.author.roles):
             print('Checking member ap')
             for member in members:
@@ -203,6 +219,13 @@ class Member(commands.Cog, name='Member'):
         if member.ap is None:
             member.ap = 0
         member.ap += amount
+        await self.check_ap(member)
+
+    async def set_ap(self, member: SyrupMember, amount: int):
+        member.ap = amount
+        await self.check_ap(member)
+
+    async def check_ap(self, member: SyrupMember):
         last_rank = Ranks.lurker
         for rank in rank_list:
             last_idx = 0
@@ -216,15 +239,11 @@ class Member(commands.Cog, name='Member'):
                         member.division = rank.value['divisions'] + 1 - last_idx
                         self.save_member(member)
                         await self.update_user_rank(rank, rank.value['divisions'] - last_idx, member.user_id)
-                        return
+                        return [rank.value['ap'][rank.value['divisions'] - last_idx], member.ap, i]
                     self.save_member(member)
-                    return
+                    return [rank.value['ap'][rank.value['divisions'] - last_idx], member.ap, i]
                 last_idx += 1
             last_rank = rank
-
-    async def set_ap(self, member: SyrupMember, amount: int):
-        member.ap = 0
-        await self.increase_ap(member, amount)
 
     def load_members(self):
         member_files = [file for file in listdir('./data/members/') if isfile(join('./data/members/', file))]
