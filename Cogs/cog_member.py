@@ -120,6 +120,7 @@ class Member(commands.Cog, name='Member'):
         if nick is None:
             nick = ctx.author.name
         values = await self.check_ap(syrupmember)
+        print(values)
         percent = float(values[1] - values[0]) / float(values[2] - values[0])
         bars = int(percent * 15)
         display_bars = '['
@@ -129,7 +130,7 @@ class Member(commands.Cog, name='Member'):
             display_bars += '-'
         display_bars += ']'
         await ctx.message.channel.send('**' + nick + '**\n---------------\n' + syrupmember.rank.value['name'] +
-                                       get_division_by_number(syrupmember.division-1).value + '\n' +
+                                       get_division_by_number(syrupmember.division).value + '\n' +
                                        display_bars)
 
     @commands.command(name='checkap', hidden=True)
@@ -233,14 +234,14 @@ class Member(commands.Cog, name='Member'):
                     if last_idx == 0:
                         rank = last_rank
                         last_idx = last_rank.value['divisions']
-                    if member.rank is not rank or member.division != rank.value['divisions'] + 1 - last_idx:
+                    if member.rank is not rank or member.division != rank.value['divisions'] - last_idx:
                         member.rank = rank
-                        member.division = rank.value['divisions'] + 1 - last_idx
+                        member.division = rank.value['divisions'] - last_idx
                         self.save_member(member)
                         await self.update_user_rank(rank, rank.value['divisions'] - last_idx, member.user_id)
-                        return [rank.value['ap'][rank.value['divisions'] - last_idx], member.ap, i]
+                        return [rank.value['ap'][last_idx - 1], member.ap, i]
                     self.save_member(member)
-                    return [rank.value['ap'][rank.value['divisions'] - last_idx], member.ap, i]
+                    return [rank.value['ap'][last_idx - 1], member.ap, i]
                 last_idx += 1
             last_rank = rank
 
