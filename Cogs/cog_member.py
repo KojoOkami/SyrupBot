@@ -78,6 +78,7 @@ rank_list = [Ranks.lurker, Ranks.member, Ranks.known, Ranks.regular, Ranks.hero,
 class Divisions(enum.Enum):
     phoenix = "『✸』"
     master = "『★』"
+    lurker = "『▽』"
     one = "『Ⅰ』"
     two = "『Ⅱ』"
     three = "『Ⅲ』"
@@ -135,18 +136,19 @@ class Member(commands.Cog, name='Member'):
     @commands.command(name='checkap', hidden=True)
     async def check_all_ap(self, ctx):
         if f.check_admin(ctx.author.roles):
-            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Checking all member ap')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Checking all member ap...')
             for member in members:
-                await self.increase_ap(self.get_member_by_id(member), 0)
+                await self.check_ap(self.get_member_by_id(member), force_update=True)
             await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Done!')
 
     @commands.command(name='recalc', hidden=True)
     async def recalculate_rank(self, ctx):
         if f.check_admin(ctx.author.roles):
-            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Recalculating user AP')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Recalculating user AP...')
             users = {}
             for t_channel in ctx.guild.text_channels:
-                await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Getting history for Text Channel: ' + t_channel.name)
+                await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Getting history for Text Channel: ' +
+                                                                              t_channel.name + '...')
                 last_message = None
                 async for message in t_channel.history(limit=None, oldest_first=True):
                     member = message.author
@@ -156,7 +158,7 @@ class Member(commands.Cog, name='Member'):
                                 users[str(member.id)] = 0
                             users[str(member.id)] += await f.value_message(message, last_message=last_message)
                             last_message = message
-            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Assigning AP to Users')
+            await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Assigning AP to Users...')
             for user in users:
                 await self.set_ap(self.get_member_by_id(int(user)), users[user])
             await self.bot.get_channel(config.BOT_SYSTEM_CHANNEL_ID).send('Done!')
@@ -224,7 +226,7 @@ class Member(commands.Cog, name='Member'):
         member.ap = amount
         await self.check_ap(member)
 
-    async def check_ap(self, member: SyrupMember):
+    async def check_ap(self, member: SyrupMember, force_update: bool = False):
         last_rank = Ranks.lurker
         for rank in rank_list:
             last_idx = 0
@@ -233,7 +235,7 @@ class Member(commands.Cog, name='Member'):
                     if last_idx == 0:
                         rank = last_rank
                         last_idx = last_rank.value['divisions']
-                    if member.rank is not rank or member.division != rank.value['divisions'] - last_idx:
+                    if member.rank is not rank or member.division != rank.value['divisions'] - last_idx or force_update:
                         member.rank = rank
                         member.division = rank.value['divisions'] - last_idx
                         self.save_member(member)
@@ -268,9 +270,11 @@ class Member(commands.Cog, name='Member'):
             return self.SyrupMember(user_id)
         return member
 
-    async def format_user_name(self, user_id: int, division: int, master: bool = False, phoenix: bool = False,
-                               reason: str = None):
-        if master:
+    async def format_user_name(self, user_id: int, division: int, lurker: bool = False, master: bool = False,
+                               phoenix: bool = False, reason: str = None):
+        if lurker:
+            division_string = Divisions.lurker.value
+        elif master:
             division_string = Divisions.master.value
         elif phoenix:
             division_string = Divisions.phoenix.value
@@ -311,5 +315,5 @@ class Member(commands.Cog, name='Member'):
             for role in self.get_rank_roles():
                 await member.remove_roles(role, reason='Role update')
             await member.add_roles(new_role, reason='Role update')
-        await self.format_user_name(user_id, division, rank is Ranks.master, rank is Ranks.syrup_phoenix,
-                                    reason='Role update')
+        await self.format_user_name(user_id, division, lurker=(rank is Ranks.lurker), master=(rank is Ranks.master),
+                                    phoenix=(rank is Ranks.syrup_phoenix), reason='Role update')
